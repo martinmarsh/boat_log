@@ -3,22 +3,26 @@ from planning.models import Plan
 
 
 class Passage(models.Model):
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
     start_from = models.CharField(max_length=200)
-    to = models.CharField(max_length=200)
-    towards = models.CharField(max_length=200)
-    narrative = models.TextField()
-    weather = models.TextField()
-    maintenance = models.TextField()
-    max_wind_force = models.DecimalField(max_digits=1, decimal_places=0)
-    max_wind_direction = models.DecimalField(max_digits=3, decimal_places=0)
-    min_wind_force = models.DecimalField(max_digits=1, decimal_places=0)
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
-    distance = models.DecimalField(max_digits=7, decimal_places=1)
-    fuel_used = models.DecimalField(max_digits=5, decimal_places=1)
-    day_hrs = models.DecimalField(max_digits=3, decimal_places=1)
-    night_hrs = models.DecimalField(max_digits=3, decimal_places=1)
+    to = models.CharField(max_length=200, blank=True, default="")
+    towards = models.CharField(max_length=200, blank=True, default='')
+    narrative = models.TextField(blank=True, default='')
+    weather = models.TextField(blank=True, default='')
+    gpx_source_file = models.CharField(max_length=180, blank=True, default="")
+    maintenance = models.TextField(blank=True, default='')
+    max_wind_force = models.DecimalField(max_digits=1, decimal_places=0, blank=True, null=True)
+    max_wind_direction = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    min_wind_force = models.DecimalField(max_digits=1, decimal_places=0, blank=True, null=True)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, blank=True, null=True)
+    distance = models.DecimalField(max_digits=7, decimal_places=1, blank=True, null=True)
+    fuel_used = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    day_hrs = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    night_hrs = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.start_from} to {self.to} on {self.start_time}'
 
 
 class SailLog(models.Model):
@@ -38,6 +42,13 @@ class SailLog(models.Model):
     ALL_SAILS_REEF_3 = 'A3'
     FULL_MAIN_ONLY = 'MF'
     NO_SAILS = 'NN'
+    MAIN_REEF1 = 'M1'
+    MAIN_REEF2 = 'M2'
+    MAIN_REEF3 = 'M3'
+    FULL_GENOA_ONLY = 'GF'
+    GENOA_REEF1 = 'G1'
+    GENOA_REEF2 = 'G2'
+    GENOA_REEF3 = 'G3'
 
     sail_plans = [
         (FULL_SAIL, 'Full Sail'),
@@ -45,23 +56,27 @@ class SailLog(models.Model):
         (ALL_SAILS_REEF_2, 'All sails reef 1'),
         (ALL_SAILS_REEF_3, 'All sails reef 3'),
         (FULL_MAIN_ONLY, 'Only Main Full'),
-        ('M1', 'Only Main Reef 1'),
-        ('M2', 'Only Main Reef 2'),
-        ('M3', 'Only Main Reef 3'),
-        ('GF', 'only Full Genoa'),
-        ('G1', 'only Genoa reef 1'),
-        ('G2', 'only Genoa reef 2'),
-        ('G3', 'only Genoa reef 3'),
+        (MAIN_REEF1, 'Only Main Reef 1'),
+        (MAIN_REEF2, 'Only Main Reef 2'),
+        (MAIN_REEF3, 'Only Main Reef 3'),
+        (FULL_GENOA_ONLY, 'only Full Genoa'),
+        (GENOA_REEF1, 'only Genoa reef 1'),
+        (GENOA_REEF2, 'only Genoa reef 2'),
+        (GENOA_REEF3, 'only Genoa reef 3'),
         (NO_SAILS, 'no sails')
     ]
 
     when = models.DateTimeField()
-    wind_side = models.CharField(choices=tack, max_length=1, default=UNKNOWN)
-    wind_force = models.DecimalField(max_digits=1, decimal_places=0)
-    wind_direction = models.DecimalField(max_digits=3, decimal_places=0)
-    sail_plan = models.CharField(choices=sail_plans, max_length=2, default=NO_SAILS)
+    passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
+    wind_side = models.CharField(choices=tack, max_length=1, default=UNKNOWN, null=True)
+    wind_force = models.DecimalField(max_digits=1, decimal_places=0, blank=True, null=True)
+    wind_direction = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    sail_plan = models.CharField(choices=sail_plans, max_length=2, default=NO_SAILS, null=True)
     spinnaker = models.BooleanField(default=False)
     cruising_shoot = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.when} {self.passage.start_from}'
 
 
 class Position(models.Model):
@@ -102,14 +117,71 @@ class Position(models.Model):
     ]
 
     when = models.DateTimeField()
-    passage = models.ForeignKey(Passage, on_delete=models.CASCADE)
-    lat = models.FloatField()
-    long = models.FloatField()
-    log = models.DecimalField(max_digits=10, decimal_places=3)
-    eng_log = models.DecimalField(max_digits=10, decimal_places=3)
-    course = models.DecimalField(max_digits=3, decimal_places=0)
-    speed = models.DecimalField(max_digits=3, decimal_places=0)
-    sog = models.DecimalField(max_digits=3, decimal_places=0)
-    cog = models.DecimalField(max_digits=3, decimal_places=0)
-    depth = models.DecimalField(max_digits=3, decimal_places=0)
-    status = models.CharField(choices=sail_status, max_length=2, default=MOORED)
+    narrative = models.TextField(blank=True, default='')
+    passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
+    lat = models.FloatField(blank=True, null=True)
+    long = models.FloatField(blank=True, null=True)
+    log = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    course = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    speed = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    sog = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    cog = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    status = models.CharField(choices=sail_status, max_length=2, default=MOORED, null=True)
+
+    def __str__(self):
+        return f'{self.when} {self.passage.start_from}'
+
+
+class TideLog(models.Model):
+    when = models.DateTimeField()
+    passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
+    HW = models.DateTimeField()
+    LW = models.DateTimeField()
+    port = models.CharField(max_length=100, blank=True, default='')
+    spring_neap_percent = models.DecimalField(max_digits=2, decimal_places=0, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.when} {self.port}'
+
+
+class DepthLog(models.Model):
+    when = models.DateTimeField()
+    depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    lat = models.FloatField(blank=True, null=True)
+    long = models.FloatField(blank=True, null=True)
+    tide = models.ForeignKey(TideLog, on_delete=models.CASCADE, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.when} {self.depth}'
+
+
+class Track(models.Model):
+    name = models.CharField(max_length=150, default="")
+    passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
+    gpx_source_file = models.CharField(max_length=180, blank=True, default="")
+
+    def __str__(self):
+        return f'{self.name} {self.passage}'
+
+
+class TrackPoint(models.Model):
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, blank=True, null=True)
+    number = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    lat = models.FloatField(blank=True, null=True)
+    long = models.FloatField(blank=True, null=True)
+    depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.track} - {self.number}'
+
+
+class FixLog(models.Model):
+    when = models.DateTimeField()
+    passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
+    lat = models.FloatField(blank=True, null=True)
+    long = models.FloatField(blank=True, null=True)
+    depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    by = models.CharField(max_length=20, blank=True, default='GPS')
+
+    def __str__(self):
+        return f'{self.when} {self.passage.start_from}'
