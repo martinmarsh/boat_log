@@ -159,6 +159,7 @@ class Track(models.Model):
     name = models.CharField(max_length=150, default="")
     passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
     gpx_source_file = models.CharField(max_length=180, blank=True, default="")
+    gpx_track_name = models.CharField(max_length=150, default="", blank=True)
 
     def __str__(self):
         return f'{self.name} {self.passage}'
@@ -166,7 +167,9 @@ class Track(models.Model):
 
 class TrackPoint(models.Model):
     track = models.ForeignKey(Track, on_delete=models.CASCADE, blank=True, null=True)
-    number = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    number = models.DecimalField(max_digits=6, decimal_places=0, blank=True, null=True)
+    segment = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    seg_num = models.DecimalField(max_digits=4, decimal_places=0, blank=True, null=True)
     lat = models.FloatField(blank=True, null=True)
     long = models.FloatField(blank=True, null=True)
     depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)

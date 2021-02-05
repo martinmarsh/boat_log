@@ -35,7 +35,7 @@ class TideHeightPoint(models.Model):
         return f'{self.hrs} - {self.tide_station}'
 
 
-class TideRates(models.Model):
+class TideRate(models.Model):
     name = models.CharField(max_length=150)
 
     def __str__(self):
@@ -44,13 +44,13 @@ class TideRates(models.Model):
 
 class TideRatePoint(models.Model):
     hrs = models.DecimalField(max_digits=1, decimal_places=0, blank=True, null=True)
-    tide_rates = models.ForeignKey(TideRates, on_delete=models.CASCADE)
+    tide_rate = models.ForeignKey(TideRate, on_delete=models.CASCADE)
     direction = models.DecimalField(max_digits=1, decimal_places=0, blank=True, null=True)
     spring = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     neap = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
 
     def __str__(self):
-        return f'{self.hrs} - {self.tide_rates}'
+        return f'{self.hrs} - {self.tide_rate}'
 
 
 class WayPoint(models.Model):
@@ -65,7 +65,7 @@ class WayPoint(models.Model):
     scale = models.JSONField(null=True,  blank=True)
     links = models.JSONField(null=True,  blank=True)
     tide_station = models.ForeignKey(TideStation, on_delete=models.CASCADE, blank=True, null=True)
-    tide_rates = models.ForeignKey(TideRates, on_delete=models.CASCADE, blank=True, null=True)
+    tide_rates = models.ForeignKey(TideRate, on_delete=models.CASCADE, blank=True, null=True)
     drift_factor = models.DecimalField(max_digits=2, decimal_places=0, blank=True, null=True)
     set_rotation = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
 

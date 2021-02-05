@@ -52,3 +52,46 @@ class SeaLog(models.Model):
 
     def __str__(self):
         return f'{self.when} {self.passage.start_from}'
+
+
+class ExchangeLocation(models.Model):
+    name = models.CharField(max_length=100)
+    directory = models.CharField(max_length=200, blank=True, default="")
+
+    def __str__(self):
+        return self.name
+
+
+class GPXReadFile(models.Model):
+    gpx_file_name = models.CharField(max_length=150)
+    directory = models.ForeignKey(ExchangeLocation, on_delete=models.CASCADE)
+    write_time = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.gpx_file_name} - {self. directory}'
+
+
+class GPXWriteFile(models.Model):
+    ALL = 'AL'
+    WAYPOINTS = 'WP'
+    ROUTES = 'RT'
+    TRACKS = 'TR'
+    PASSAGE_LOG = 'PA'
+    PLAN_LOG = 'PL'
+    content = [  # Wind side
+        (ALL, 'All Elements 9s Data Waypoints, Routes, Tracks'),
+        (WAYPOINTS, 'Waypoints OpenCPN/Element 9s'),
+        (ROUTES, 'Routes OpenCPN/Element 9s'),
+        (TRACKS, 'Tracks OpenCPN/Element 9s'),
+        (PASSAGE_LOG, 'Passage Log - boat log data'),
+        (PLAN_LOG, 'Plan Log - boat log data'),
+    ]
+
+    gpx_file_name = models.CharField(max_length=150)
+    directory = models.ForeignKey(ExchangeLocation, on_delete=models.CASCADE)
+    content = models.CharField(choices=content, max_length=2, default=ALL, null=True)
+    write_time = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.gpx_file_name} - {self.directory}'
+

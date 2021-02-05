@@ -1,5 +1,5 @@
 from django.contrib import admin
-from planning.models import Plan, PlanPoint, TideRatePoint, TideStation, TideRates, WayPoint, TideHeightPoint
+from planning.models import Plan, PlanPoint, TideRatePoint, TideStation, TideRate, WayPoint, TideHeightPoint
 
 
 @admin.register(Plan)
@@ -27,8 +27,8 @@ class TideHeightPointAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(TideRates)
-class TideRatesAdmin(admin.ModelAdmin):
+@admin.register(TideRate)
+class TideRateAdmin(admin.ModelAdmin):
     pass
 
 
