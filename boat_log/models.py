@@ -76,20 +76,29 @@ class GPXWriteFile(models.Model):
     WAYPOINTS = 'WP'
     ROUTES = 'RT'
     TRACKS = 'TR'
-    PASSAGE_LOG = 'PA'
-    PLAN_LOG = 'PL'
-    content = [  # Wind side
+
+    OPEN_CPN = 'OP'
+    RAYMARINE = 'RA'
+    NO_EXT = 'NO'
+
+    content = [
         (ALL, 'All Elements 9s Data Waypoints, Routes, Tracks'),
         (WAYPOINTS, 'Waypoints OpenCPN/Element 9s'),
         (ROUTES, 'Routes OpenCPN/Element 9s'),
         (TRACKS, 'Tracks OpenCPN/Element 9s'),
-        (PASSAGE_LOG, 'Passage Log - boat log data'),
-        (PLAN_LOG, 'Plan Log - boat log data'),
+    ]
+
+    ext_type = [
+        (NO_EXT, 'Add No Extensions'),
+        (OPEN_CPN, 'OpenCPN'),
+        (RAYMARINE, 'Raymarine'),
     ]
 
     gpx_file_name = models.CharField(max_length=150)
     directory = models.ForeignKey(ExchangeLocation, on_delete=models.CASCADE)
     content = models.CharField(choices=content, max_length=2, default=ALL, null=True)
+    extensions = models.CharField(choices=ext_type, max_length=2, default=ALL, null=True)
+    from_date = models.DateTimeField(blank=True, null=True)
     write_time = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):

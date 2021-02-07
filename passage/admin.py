@@ -1,5 +1,5 @@
 from django.contrib import admin
-from passage.models import Passage, Position, SailLog, DepthLog, TideLog, FixLog, Track, TrackPoint
+from passage.models import Passage, Position, SailLog, DepthLog, TideLog, Track, TrackPoint, TrackAssociation
 
 
 @admin.register(Passage)
@@ -27,8 +27,8 @@ class TideLogAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(FixLog)
-class FixLogAdmin(admin.ModelAdmin):
+@admin.register(TrackAssociation)
+class TrackAssociationAdmin(admin.ModelAdmin):
     pass
 
 
@@ -40,5 +40,5 @@ class TrackAdmin(admin.ModelAdmin):
 
 @admin.register(TrackPoint)
 class TrackPointAdmin(admin.ModelAdmin):
-    list_display = ['id', 'track', 'number', 'segment', 'seg_num']
+    list_display = ['id', 'track', 'number', 'segment', 'seg_num', 'when']
     ordering = ['track', 'number']

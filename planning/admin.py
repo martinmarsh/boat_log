@@ -34,4 +34,5 @@ class TideRateAdmin(admin.ModelAdmin):
 
 @admin.register(WayPoint)
 class WayPointAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['name', 'description', 'time', 'type', 'symbol', 'updated_at']
+    ordering = ['long']

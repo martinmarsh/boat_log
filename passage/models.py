@@ -20,6 +20,8 @@ class Passage(models.Model):
     fuel_used = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     day_hrs = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     night_hrs = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'{self.start_from} to {self.to} on {self.start_time}'
@@ -97,6 +99,15 @@ class Position(models.Model):
     BROAD_REACH = 'BR'
     RUNNING = 'RU'
 
+    GPS_NAV = 'GN'
+    GPS_PLOTTER = 'GP'
+    GPS_DONGLE = 'GD'
+    GPS_MOBILE = 'GM'
+    NEAR_MARK = 'NM'
+    DECCA = 'DF'
+    RUN_FIX = 'RE'
+    NO_FIX = 'NF'
+
     sail_status = [
         (MOORED, 'Moored/Berthed'),
         (UNDER_WAY, 'under way'),
@@ -116,12 +127,24 @@ class Position(models.Model):
         (RUNNING, 'running under sail')
     ]
 
+    fix_type = [
+        (NO_FIX, 'No Fix'),
+        (GPS_NAV, 'GPS from Nav device eg Garmin'),
+        (GPS_PLOTTER, 'GPS position from Plotter eg RAYMARINE element 9'),
+        (GPS_DONGLE, 'GPS Dongle'),
+        (GPS_MOBILE, 'GPS Mobile phone'),
+        (NEAR_MARK, 'Near Mark or Known position'),
+        (DECCA, 'Decca Fix'),
+        (RUN_FIX, 'Running fix estimate')
+    ]
+
     when = models.DateTimeField()
     narrative = models.TextField(blank=True, default='')
     passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
     lat = models.FloatField(blank=True, null=True)
     long = models.FloatField(blank=True, null=True)
     log = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
+    fix_by = models.CharField(choices=fix_type, max_length=2, default=NO_FIX, null=True)
     course = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     speed = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     sog = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
@@ -160,12 +183,16 @@ class Track(models.Model):
     passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
     gpx_source_file = models.CharField(max_length=180, blank=True, default="")
     gpx_track_name = models.CharField(max_length=150, default="", blank=True)
+    colour = models.CharField(max_length=40, default="", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.name} {self.passage}'
+        return f'{self.name}'
 
 
 class TrackPoint(models.Model):
+    when = models.DateTimeField(blank=True, null=True)
     track = models.ForeignKey(Track, on_delete=models.CASCADE, blank=True, null=True)
     number = models.DecimalField(max_digits=6, decimal_places=0, blank=True, null=True)
     segment = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
@@ -178,13 +205,10 @@ class TrackPoint(models.Model):
         return f'{self.track} - {self.number}'
 
 
-class FixLog(models.Model):
-    when = models.DateTimeField()
+class TrackAssociation(models.Model):
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, blank=True, null=True)
     passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
-    lat = models.FloatField(blank=True, null=True)
-    long = models.FloatField(blank=True, null=True)
-    depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    by = models.CharField(max_length=20, blank=True, default='GPS')
+    note = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f'{self.when} {self.passage.start_from}'

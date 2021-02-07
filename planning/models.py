@@ -13,6 +13,8 @@ class Plan(models.Model):
     becoming_wind_force = models.DecimalField(max_digits=1, decimal_places=0, blank=True, null=True)
     becoming_direction = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     plan_speed = models.DecimalField(max_digits=3, decimal_places=1, default=5.5)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'{self.title} {self.start_from} to {self.to} {self.start_time}'
@@ -20,6 +22,8 @@ class Plan(models.Model):
 
 class TideStation(models.Model):
     name = models.CharField(max_length=150)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -37,6 +41,8 @@ class TideHeightPoint(models.Model):
 
 class TideRate(models.Model):
     name = models.CharField(max_length=150)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -58,16 +64,21 @@ class WayPoint(models.Model):
     description = models.TextField(default="", blank=True)
     lat = models.FloatField()
     long = models.FloatField()
+    time = models.DateTimeField(blank=True, null=True)
+    type = models.CharField(max_length=10, default="WPT", blank=True)
     symbol = models.CharField(max_length=80, default="", blank=True)
-    viz_name = models.CharField(max_length=150, default="",  blank=True)
-    arrival_radius = models.JSONField(null=True,  blank=True)
-    range_rings = models.JSONField(null=True,  blank=True)
-    scale = models.JSONField(null=True,  blank=True)
+    psym = models.CharField(max_length=80, default="", blank=True)
+    opencpn_guid = models.CharField(max_length=150, default="",  blank=True)
+    raymarine_guid = models.CharField(max_length=150, default="",  blank=True)
+    extensions = models.JSONField(null=True,  blank=True)
+    opencpn_extensions = models.JSONField(null=True,  blank=True)
     links = models.JSONField(null=True,  blank=True)
     tide_station = models.ForeignKey(TideStation, on_delete=models.CASCADE, blank=True, null=True)
     tide_rates = models.ForeignKey(TideRate, on_delete=models.CASCADE, blank=True, null=True)
     drift_factor = models.DecimalField(max_digits=2, decimal_places=0, blank=True, null=True)
     set_rotation = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -83,6 +94,8 @@ class PlanPoint(models.Model):
     cts = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     smg = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     distance = models.DecimalField(max_digits=7, decimal_places=1, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'{self.number} - {self.way_point}'
