@@ -36,9 +36,11 @@ class TrackAssociationAdmin(admin.ModelAdmin):
 class TrackAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'passage']
     ordering = ['name']
+    list_filter = ['passage']
 
 
 @admin.register(TrackPoint)
 class TrackPointAdmin(admin.ModelAdmin):
     list_display = ['id', 'track', 'number', 'segment', 'seg_num', 'when']
     ordering = ['track', 'number']
+    list_filter = ['track']

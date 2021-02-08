@@ -1,10 +1,79 @@
 import xmltodict
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from passage.models import TrackPoint, Track
-from planning.models import WayPoint
+from planning.models import WayPoint, Plan, PlanPoint
 from django.utils.dateparse import parse_datetime
 import math
 import datetime
+
+
+def read_route(in_file, gpx_rte):
+    route_name = gpx_rte.get('name', in_file)
+    route_extensions = gpx_rte.get('extensions', {})
+    ex_defs = {
+        'opencpn_guid': 'opencpn:guid',
+        'start_from': 'opencpn:start',
+        'to': 'opencpn:end',
+        'plan_speed': 'opencpn:planned_speed',
+        'start_time': 'opencpn:planned_departure',
+    }
+    passage_fields = {field_name: route_extensions.get(gpx_name, '') for field_name, gpx_name in ex_defs.items()}
+    for field_name in passage_fields:
+        try:
+            del (route_extensions[ex_defs[field_name]])
+        except KeyError:
+            pass
+    passage_fields['title'] = route_name
+    passage_fields['opencpn_extensions'] = route_extensions
+    set_fields = {field_name: field_value for field_name, field_value in passage_fields.items() if field_value}
+    ids = {}
+    if set_fields['opencpn_guid']:
+        ids['opencpn_guid'] = set_fields['opencpn_guid']
+    elif passage_fields['title']:
+        ids['title'] = passage_fields['title']
+        if passage_fields['start_time']:
+            ids['start_time'] = passage_fields['start_time']
+    plan, _ = Plan.objects.update_or_create(**ids, defaults=set_fields)
+
+    rte_defs = {
+        'opencpn_guid': 'opencpn:guid',
+        'arrival_radius': 'opencpn:arrival_radius'
+    }
+    defs = {
+        'name': 'name',
+        'time': 'time',
+        'description': 'desc',
+        'type': 'type',
+        'links': 'link',
+        'lat': '@lat',
+        'long': '@lon',
+        'symbol': 'sym',
+        'psym': 'psym',
+    }
+    number = 1
+    for rte_data in gpx_rte.get('rtept', {}):
+        rte_extensions = rte_data.get('extensions')
+        passage_point_exts = {field_name: rte_extensions.get(gpx_name, '') for field_name, gpx_name in rte_defs.items()}
+        for field_name in passage_point_exts:
+            try:
+                del (rte_extensions[rte_defs[field_name]])
+            except KeyError:
+                pass
+        field = {field_name: rte_data.get(gpx_name, '') for field_name, gpx_name in defs.items()}
+        field['opencpn_extensions'] = rte_extensions
+        field['number'] = number
+        field['plan'] = plan
+        field.update(passage_point_exts)
+        set_fields = {field_name: field_value for field_name, field_value in field.items() if field_value}
+        ids = {}
+        if set_fields['opencpn_guid']:
+            ids['opencpn_guid'] = set_fields['opencpn_guid']
+        elif passage_fields['name']:
+            ids['name'] = passage_fields['name']
+            if passage_fields['time']:
+                ids['time'] = passage_fields['time']
+        PlanPoint.objects.update_or_create(**ids, defaults=set_fields)
+        number += 1
 
 
 def process_trk_segment(trk_pt, seg_num, number, track, segment, delta, lat0, long0, delta_lat):
@@ -33,9 +102,9 @@ def process_trk_segment(trk_pt, seg_num, number, track, segment, delta, lat0, lo
     return seg_num, number, lat0, long0
 
 
-def read_track(in_file, gpx):
+def read_track(in_file, gpx_trk):
     track_number = 1
-    for trk_data in gpx['gpx']['trk']:
+    for trk_data in gpx_trk:
         track_data_name = trk_data.get('name', in_file)
         if track_number > 1:
             track_data_name = f'{track_data_name}/trk-{track_number}'
@@ -82,19 +151,19 @@ def read_track(in_file, gpx):
     print("done")
 
 
-def read_waypoint(in_file, gpx):
-    for wpt_data in gpx['gpx']['wpt']:
-        defs = {
-            'name': 'name',
-            'time': 'time',
-            'description': 'desc',
-            'type': 'type',
-            'links': 'link',
-            'lat': '@lat',
-            'long': '@lon',
-            'symbol': 'sym',
-            'psym': 'psym',
-        }
+def read_waypoint(in_file, gpx_wpt):
+    defs = {
+        'name': 'name',
+        'time': 'time',
+        'description': 'desc',
+        'type': 'type',
+        'links': 'link',
+        'lat': '@lat',
+        'long': '@lon',
+        'symbol': 'sym',
+        'psym': 'psym',
+    }
+    for wpt_data in gpx_wpt:
         field = {field_name: wpt_data.get(gpx_name, '') for field_name, gpx_name in defs.items()}
         extensions = wpt_data.get('extensions')
         ids = {}
@@ -123,9 +192,11 @@ def read_in(directory, in_file):
     with open(full_file) as fd:
         gpx = xmltodict.parse(fd.read())
         if gpx['gpx'].get('trk'):
-            read_track(in_file, gpx)
+            read_track(in_file, gpx['gpx']['trk'])
         if gpx['gpx'].get('wpt'):
-            read_waypoint(in_file, gpx)
+            read_waypoint(in_file, gpx['gpx']['wpt'])
+        if gpx['gpx'].get('rte'):
+            read_route(in_file,  gpx['gpx']['rte'])
 
 
 def get_first_track_time(gpx):
