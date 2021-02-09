@@ -1,76 +1,101 @@
 import xmltodict
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from passage.models import TrackPoint, Track
-from planning.models import WayPoint, PlanPoint
-from django.utils.dateparse import parse_datetime
+from planning.models import WayPoint, Plan, PlanPoint
+from boat_log.models import GPXWriteFile
 import math
+from collections import OrderedDict
 
 
-def read_track(in_file, gpx):
-    for trk_data in gpx['gpx']['trk']:
-        track_data_name = trk_data.get('name')
-        try:
-            track = Track.objects.get(gpx_track_name=track_data_name,
-                                      gpx_source_file=in_file)
-        except ObjectDoesNotExist:
-            track = Track.objects.create(
-                name=f'{in_file}/{track_data_name}',
-                gpx_track_name=track_data_name,
-                gpx_source_file=in_file
-            )
-        except MultipleObjectsReturned:
-            track = None
+def plan_dict(plan, extensions):
+    plan_gpx = OrderedDict([
+        ('name', plan.title)
+    ])
+    if extensions == GPXWriteFile.RAYMARINE:
+        plan_gpx['extensions'] = plan.extensions
+    elif extensions == GPXWriteFile.OPEN_CPN:
+        plan_gpx['extensions'] = plan.opencpn_extensions
 
-        if not TrackPoint.objects.filter(track=track).exists():
-            number = 1
-            segment = 1
-            seg_num = 1
-            delta = 1E-04  # about 11.2m
-            delta_lat = delta  # recalculated for segment lat
-            lat0 = 0
-            long0 = 0
-
-            print(track, segment)
-            for trk_seg in trk_data['trkseg']:
-                for trk_pt in trk_seg['trkpt']:
-                    if seg_num == 1:
-                        lat0 = float(trk_pt.get('@lat', 0))
-                        long0 = float(trk_pt.get('@lon', 0))
-                        delta_lat = delta / math.cos(math.radians(lat0))
-                    lat1 = float(trk_pt.get('@lat'))
-                    long1 = float(trk_pt.get('@lon'))
-                    if seg_num == 1 or math.fabs(long1-long0) > delta or math.fabs(lat1-lat0) > delta_lat:
-                        tp = TrackPoint(
-                            track=track,
-                            number=number,
-                            segment=segment,
-                            seg_num=seg_num,
-                            lat=lat1,
-                            long=long1
-                        )
-                        tp.save()
-                        lat0 = lat1
-                        long0 = long1
-                        number += 1
-
-                    seg_num += 1
-                segment += 1
-                seg_num = 1
-    print("done")
+    return plan_gpx
 
 
-def write_waypoints(gpx, way_pts):
-    pass
+def waypoint_dict(way_pt, extensions):
+    wpt = OrderedDict([
+        ('@lat', way_pt.lat),
+        ('@lon', way_pt.long),
+        ('time', way_pt.time),
+        ('name', way_pt.name),
+        ('sym', way_pt.symbol),
+        ('type', way_pt.type),
+    ])
+    if extensions == GPXWriteFile.RAYMARINE:
+        wpt['psym'] = way_pt.psym
+        wpt['extensions'] = way_pt.extensions
+    elif extensions == GPXWriteFile.OPEN_CPN:
+        wpt['extensions'] = way_pt.opencpn_extensions
+
+    return wpt
 
 
-def write_out(directory, in_file, from_date, content):
-    full_file = f'{directory}{in_file}'
-    gpx = {}
+def write_out(directory, out_file, from_date, content, extensions):
+    full_file = f'{directory}{out_file}'
     with open(full_file, 'w') as fd:
-        for do_content in ['WP', 'RT', 'TR']:
-            if content == 'AL' or content == do_content:
-                if do_content == 'WP':
-                    way_pts = WayPoint.objects.filter(from_date >= from_date)
-                    write_waypoints(gpx, way_pts)
-                if do_content == 'TR':
-                    track = WayPoint
+        if extensions == GPXWriteFile.RAYMARINE:
+            gpx = OrderedDict([
+                ('gpx', OrderedDict([
+                    ('@xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance'),
+                    ('@version', '1.1'),
+                    ('@xmlns', 'http://www.topografix.com/GPX/1/1'),
+                    ('@creator', 'Raymarine'),
+                    ('@xmlns:raymarine', 'http://www.raymarine.com'),
+                    ('@xsi:schemaLocation', 'http://www.topografix.com/GPX/1/1 '
+                                            'http://www.topografix.com/GPX/1/1/gpx.xsd'
+                                            ' http://www.raymarine.com '
+                                            'http://www.raymarine.com/gpx_schema/RaymarineGPXExtensions.xsd'),
+                    ])
+                 )
+                ])
+        elif extensions == GPXWriteFile.OPEN_CPN:
+            gpx = OrderedDict([
+                ('gpx', OrderedDict([
+                    ('@version', '1.1'),
+                    ('@creator', 'OpenCPN'),
+                    ('@xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance'),
+                    ('@xmlns', 'http://www.topografix.com/GPX/1/1'),
+                    ('@xmlns:gpxx', 'http://www.garmin.com/xmlschemas/GpxExtensions/v3'),
+                    ('@xsi:schemaLocation', 'http://www.topografix.com/GPX/1/1 '
+                                            'http://www.topografix.com/GPX/1/1/gpx.xsd'),
+                    ('@xmlns:opencpn', 'http://www.opencpn.org')
+                ]))
+            ])
+
+        else:
+            gpx = OrderedDict([
+                ('gpx', OrderedDict([
+                    ('@version', '1.1'),
+                    ('@creator', 'BoatLog'),
+                    ('@xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance'),
+                    ('@xmlns', 'http://www.topografix.com/GPX/1/1'),
+                    ('@xsi:schemaLocation', 'http://www.topografix.com/GPX/1/1 '
+                                            'http://www.topografix.com/GPX/1/1/gpx.xsd'),
+                ]))
+            ])
+
+        for do_content in [GPXWriteFile.WAYPOINTS, GPXWriteFile.ROUTES, GPXWriteFile.TRACKS]:
+            if content == GPXWriteFile.ALL or content == do_content:
+                if do_content == GPXWriteFile.WAYPOINTS:
+                    way_pts = WayPoint.objects.filter(updated_at__gte=from_date)
+                    wpt_list = []
+                    for way_pt in way_pts:
+                        wpt_list.append(waypoint_dict(way_pt, extensions))
+                    gpx['gpx']['wpt'] = wpt_list
+
+                if do_content == GPXWriteFile.ROUTES:
+                    selected_plans = Plan.objects.filter(updated_at__gte=from_date)
+                    rte_list = []
+                    for plan in selected_plans:
+                        rte_list.append(plan_dict(plan, extensions))
+                    gpx['gpx']['rte'] = rte_list
+                if do_content == GPXWriteFile.TRACKS:
+                    pass
+        xmltodict.unparse(gpx, output=fd, encoding='utf-8', pretty=True, indent="  ")

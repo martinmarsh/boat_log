@@ -84,7 +84,7 @@ class GPXWriteFile(models.Model):
     content = [
         (ALL, 'All Elements 9s Data Waypoints, Routes, Tracks'),
         (WAYPOINTS, 'Waypoints OpenCPN/Element 9s'),
-        (ROUTES, 'Routes OpenCPN/Element 9s'),
+        (ROUTES, 'Plans and Plan Points OpenCPN/Element 9s'),
         (TRACKS, 'Tracks OpenCPN/Element 9s'),
     ]
 

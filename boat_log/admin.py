@@ -53,7 +53,7 @@ class GPXWriteFileAdmin(admin.ModelAdmin):
     def write_gpx(self, request, queryset):
         for rec in queryset.iterator():
             try:
-                write_out(rec.directory.directory, rec.gpx_file_name, rec.from_date, rec.content )
+                write_out(rec.directory.directory, rec.gpx_file_name, rec.from_date, rec.content, rec.extensions)
                 rec.write_time = datetime.now()
                 rec.save()
             except Exception as e:
