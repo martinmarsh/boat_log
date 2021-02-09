@@ -8,7 +8,7 @@ class Passage(models.Model):
     start_from = models.CharField(max_length=200)
     to = models.CharField(max_length=200, blank=True, default="")
     towards = models.CharField(max_length=200, blank=True, default='')
-    narrative = models.TextField(blank=True, default='')
+    description = models.TextField(default="", blank=True)
     weather = models.TextField(blank=True, default='')
     gpx_source_file = models.CharField(max_length=180, blank=True, default="")
     maintenance = models.TextField(blank=True, default='')
@@ -20,6 +20,7 @@ class Passage(models.Model):
     fuel_used = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     day_hrs = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     night_hrs = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -180,10 +181,13 @@ class DepthLog(models.Model):
 
 class Track(models.Model):
     name = models.CharField(max_length=150, default="")
-    passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
+    description = models.TextField(default="", blank=True)
     gpx_source_file = models.CharField(max_length=180, blank=True, default="")
     gpx_track_name = models.CharField(max_length=150, default="", blank=True)
+    opencpn_extensions = models.JSONField(null=True, blank=True)
+    extensions = models.JSONField(null=True, blank=True)
     colour = models.CharField(max_length=40, default="", blank=True)
+    active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -199,6 +203,8 @@ class TrackPoint(models.Model):
     seg_num = models.DecimalField(max_digits=4, decimal_places=0, blank=True, null=True)
     lat = models.FloatField(blank=True, null=True)
     long = models.FloatField(blank=True, null=True)
+    opencpn_extensions = models.JSONField(null=True, blank=True)
+    extensions = models.JSONField(null=True, blank=True)
     depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
 
     def __str__(self):

@@ -6,21 +6,28 @@ from django.utils.dateparse import parse_datetime
 import math
 import datetime
 
+ex_plan_defs = {
+    'opencpn_guid': 'opencpn:guid',
+    'start_from': 'opencpn:start',
+    'to': 'opencpn:end',
+    'plan_speed': 'opencpn:planned_speed',
+    'start_time': 'opencpn:planned_departure',
+}
+
+ex_rte_defs = {
+    'opencpn_guid': 'opencpn:guid',
+    'arrival_radius': 'opencpn:arrival_radius'
+}
+
 
 def read_route(in_file, gpx_rte):
     route_name = gpx_rte.get('name', in_file)
     route_extensions = gpx_rte.get('extensions', {})
-    ex_defs = {
-        'opencpn_guid': 'opencpn:guid',
-        'start_from': 'opencpn:start',
-        'to': 'opencpn:end',
-        'plan_speed': 'opencpn:planned_speed',
-        'start_time': 'opencpn:planned_departure',
-    }
-    passage_fields = {field_name: route_extensions.get(gpx_name, '') for field_name, gpx_name in ex_defs.items()}
+
+    passage_fields = {field_name: route_extensions.get(gpx_name, '') for field_name, gpx_name in ex_plan_defs.items()}
     for field_name in passage_fields:
         try:
-            del (route_extensions[ex_defs[field_name]])
+            del (route_extensions[ex_plan_defs[field_name]])
         except KeyError:
             pass
     passage_fields['title'] = route_name
@@ -35,10 +42,6 @@ def read_route(in_file, gpx_rte):
             ids['start_time'] = passage_fields['start_time']
     plan, _ = Plan.objects.update_or_create(**ids, defaults=set_fields)
 
-    rte_defs = {
-        'opencpn_guid': 'opencpn:guid',
-        'arrival_radius': 'opencpn:arrival_radius'
-    }
     defs = {
         'name': 'name',
         'time': 'time',
@@ -53,10 +56,10 @@ def read_route(in_file, gpx_rte):
     number = 1
     for rte_data in gpx_rte.get('rtept', {}):
         rte_extensions = rte_data.get('extensions')
-        passage_point_exts = {field_name: rte_extensions.get(gpx_name, '') for field_name, gpx_name in rte_defs.items()}
+        passage_point_exts = {field_name: rte_extensions.get(gpx_name, '') for field_name, gpx_name in ex_rte_defs.items()}
         for field_name in passage_point_exts:
             try:
-                del (rte_extensions[rte_defs[field_name]])
+                del (rte_extensions[ex_rte_defs[field_name]])
             except KeyError:
                 pass
         field = {field_name: rte_data.get(gpx_name, '') for field_name, gpx_name in defs.items()}
@@ -94,6 +97,14 @@ def process_trk_segment(trk_pt, seg_num, number, track, segment, delta, lat0, lo
         }
         if trk_pt.get('time'):
             data['when'] = trk_pt['time']
+        if trk_pt.get('extension'):
+            if trk_pt['extensions'].get('raymarine:TrackPointExtension'):
+                data['extensions'] = trk_pt['extensions']
+                if trk_pt['extensions']['raymarine:TrackPointExtension'].get('raymarine:WaterDepth'):
+                    data['depth'] = trk_pt['extensions']['raymarine:TrackPointExtension']['raymarine:WaterDepth']
+            else:
+                data['opencpn_extensions'] = trk_pt['extensions']
+
         TrackPoint.objects.create(**data)
         lat0 = lat1
         long0 = long1
@@ -102,53 +113,62 @@ def process_trk_segment(trk_pt, seg_num, number, track, segment, delta, lat0, lo
     return seg_num, number, lat0, long0
 
 
-def read_track(in_file, gpx_trk):
-    track_number = 1
-    for trk_data in gpx_trk:
-        track_data_name = trk_data.get('name', in_file)
-        if track_number > 1:
-            track_data_name = f'{track_data_name}/trk-{track_number}'
-        track_number += 1
+def read_track(in_file, trk_data, track_number):
+    track_data_name = trk_data.get('name', in_file)
+    if track_number > 0:
+        track_data_name = f'{track_data_name}/trk-{track_number}'
+    try:
+        track = Track.objects.get(gpx_track_name=track_data_name)
+    except ObjectDoesNotExist:
+        track = Track.objects.create(
+            name=track_data_name,
+            description=trk_data.get('desc', in_file),
+            gpx_track_name=track_data_name,
+            gpx_source_file=in_file
+        )
+    except MultipleObjectsReturned:
+        track = None
+
+    if not TrackPoint.objects.filter(track=track).exists():
+        number = 1
+        segment = 1
+        seg_num = 1
+        delta = 1E-04  # about 11.2m
+        delta_lat = delta  # recalculated for segment lat
+        lat0 = 0
+        long0 = 0
+
+        print(track, segment)
         try:
-            track = Track.objects.get(gpx_track_name=track_data_name)
-        except ObjectDoesNotExist:
-            track = Track.objects.create(
-                name=track_data_name,
-                gpx_track_name=track_data_name,
-                gpx_source_file=in_file
-            )
-        except MultipleObjectsReturned:
-            track = None
+            for trk_seg in trk_data['trkseg'].values():
+                for trk_pt in trk_seg:
+                    seg_num, number, lat0, long0 = process_trk_segment(
+                        trk_pt, seg_num, number, track, segment, delta, lat0, long0, delta_lat
+                    )
+                print(track, segment, seg_num)
+                segment += 1
+                seg_num = 1
+        except AttributeError:
+            for trk_seg in trk_data['trkseg']:
+                for trk_pt in trk_seg['trkpt']:
+                    seg_num, number, lat0, long0 = process_trk_segment(
+                        trk_pt, seg_num, number, track, segment, delta, lat0, long0, delta_lat
+                    )
+                print(track, segment, seg_num)
+                segment += 1
+                seg_num = 1
 
-        if not TrackPoint.objects.filter(track=track).exists():
-            number = 1
-            segment = 1
-            seg_num = 1
-            delta = 1E-04  # about 11.2m
-            delta_lat = delta  # recalculated for segment lat
-            lat0 = 0
-            long0 = 0
 
-            print(track, segment)
-            try:
-                for trk_seg in trk_data['trkseg'].values():
-                    for trk_pt in trk_seg:
-                        seg_num, number, lat0, long0 = process_trk_segment(
-                            trk_pt, seg_num, number, track, segment, delta, lat0, long0, delta_lat
-                        )
-                    print(track, segment, seg_num)
-                    segment += 1
-                    seg_num = 1
-            except AttributeError:
-                for trk_seg in trk_data['trkseg']:
-                    for trk_pt in trk_seg['trkpt']:
-                        seg_num, number, lat0, long0 = process_trk_segment(
-                            trk_pt, seg_num, number, track, segment, delta, lat0, long0, delta_lat
-                        )
-                    print(track, segment, seg_num)
-                    segment += 1
-                    seg_num = 1
-    print("done")
+def read_tracks(in_file, gpx_trk):
+    track_number = 1
+    try:
+        for trk_data in gpx_trk:
+            read_track(in_file, trk_data, track_number)
+            track_number += 1
+        print("done")
+    except AttributeError:
+        track_number = 0
+        read_track(in_file, gpx_trk, track_number)
 
 
 def read_waypoint(in_file, gpx_wpt):
@@ -192,7 +212,7 @@ def read_in(directory, in_file):
     with open(full_file) as fd:
         gpx = xmltodict.parse(fd.read())
         if gpx['gpx'].get('trk'):
-            read_track(in_file, gpx['gpx']['trk'])
+            read_tracks(in_file, gpx['gpx']['trk'])
         if gpx['gpx'].get('wpt'):
             read_waypoint(in_file, gpx['gpx']['wpt'])
         if gpx['gpx'].get('rte'):

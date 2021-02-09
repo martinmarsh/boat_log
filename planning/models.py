@@ -17,6 +17,8 @@ class Plan(models.Model):
     distance = models.DecimalField(max_digits=7, decimal_places=1, blank=True, null=True)
     dtw = models.DecimalField(max_digits=7, decimal_places=1, blank=True, null=True)
     opencpn_extensions = models.JSONField(null=True,  blank=True)
+    extensions = models.JSONField(null=True, blank=True)
+    active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -81,6 +83,7 @@ class WayPoint(models.Model):
     tide_rates = models.ForeignKey(TideRate, on_delete=models.CASCADE, blank=True, null=True)
     drift_factor = models.DecimalField(max_digits=2, decimal_places=0, blank=True, null=True)
     set_rotation = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -100,6 +103,7 @@ class PlanPoint(models.Model):
     psym = models.CharField(max_length=80, default="", blank=True)
     lat = models.FloatField(blank=True, null=True)
     long = models.FloatField(blank=True, null=True)
+    extensions = models.JSONField(null=True, blank=True)
     opencpn_extensions = models.JSONField(null=True,  blank=True)
     opencpn_guid = models.CharField(max_length=150, default="",  blank=True)
     arrival_radius = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
