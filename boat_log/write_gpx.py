@@ -1,9 +1,9 @@
 import xmltodict
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from passage.models import TrackPoint, Track
+
+from passage.models import TrackPoint, Track, Passage, Position
 from planning.models import WayPoint, Plan, PlanPoint
 from boat_log.models import GPXWriteFile
-import math
+
 from collections import OrderedDict
 from .read_gpx import ex_plan_defs, ex_rte_defs
 
@@ -24,7 +24,7 @@ def list_segs(track_points, extensions):
                 ('@lon', track_point.long),
                 ])
         if track_point.when:
-            trp_pt['time'] = track_point.when
+            trp_pt['time'] = track_point.when.strftime('%Y-%m-%dT%H:%M:%S%Z')
         if extensions == GPXWriteFile.RAYMARINE and track_point.extensions:
             trp_pt['extensions'] = track_point.extensions
         elif extensions == GPXWriteFile.OPEN_CPN and track_point.opencpn_extensions:
@@ -37,7 +37,7 @@ def list_segs(track_points, extensions):
     return seg_list
 
 
-def track_dict(track, extensions):
+def track_dict(track, extensions, do_content):
     track_gpx = OrderedDict([
         ('name', track.name),
         ('desc', track.description),
@@ -46,7 +46,10 @@ def track_dict(track, extensions):
         track_gpx['extensions'] = track.extensions
     elif extensions == GPXWriteFile.OPEN_CPN:
         track_gpx['extensions'] = track.opencpn_extensions
-    track_points = TrackPoint.objects.filter(track=track).order_by('number')
+    if do_content == GPXWriteFile.TRACKS:
+        track_points = TrackPoint.objects.filter(track=track).order_by('number')
+    else:
+        track_points = Position.objects.filter(passage=track).order_by('number')
     track_gpx['trkseg'] = list_segs(track_points, extensions)
     return track_gpx
 
@@ -108,7 +111,7 @@ def waypoint_dict(way_pt, extensions):
     return wpt
 
 
-def write_out(directory, out_file, from_date, content, extensions):
+def write_out(directory, out_file, select, content, extensions):
     full_file = f'{directory}{out_file}'
     with open(full_file, 'w') as fd:
         if extensions == GPXWriteFile.RAYMARINE:
@@ -152,25 +155,28 @@ def write_out(directory, out_file, from_date, content, extensions):
                 ]))
             ])
 
-        for do_content in [GPXWriteFile.WAYPOINTS, GPXWriteFile.ROUTES, GPXWriteFile.TRACKS]:
+        for do_content in [GPXWriteFile.WAYPOINTS, GPXWriteFile.ROUTES, GPXWriteFile.TRACKS, GPXWriteFile.PASSAGE]:
             if content == GPXWriteFile.ALL or content == do_content:
                 if do_content == GPXWriteFile.WAYPOINTS:
-                    way_pts = WayPoint.objects.filter(updated_at__gte=from_date)
+                    way_pts = WayPoint.objects.filter(select)
                     wpt_list = []
                     for way_pt in way_pts:
                         wpt_list.append(waypoint_dict(way_pt, extensions))
                     gpx['gpx']['wpt'] = wpt_list
 
                 if do_content == GPXWriteFile.ROUTES:
-                    selected_plans = Plan.objects.filter(updated_at__gte=from_date)
+                    selected_plans = Plan.objects.filter(select)
                     rte_list = []
                     for plan in selected_plans:
                         rte_list.append(plan_dict(plan, extensions))
                     gpx['gpx']['rte'] = rte_list
-                if do_content == GPXWriteFile.TRACKS:
-                    tracks = Track.objects.filter(updated_at__gte=from_date)
+                if do_content == GPXWriteFile.TRACKS or do_content == GPXWriteFile.PASSAGE:
+                    if do_content == GPXWriteFile.TRACKS:
+                        tracks = Track.objects.filter(select)
+                    else:
+                        tracks = Passage.objects.filter(select)
                     track_list = []
                     for track in tracks:
-                        track_list.append(track_dict(track, extensions))
+                        track_list.append(track_dict(track, extensions, do_content))
                     gpx['gpx']['trk'] = track_list
         xmltodict.unparse(gpx, output=fd, encoding='utf-8', pretty=True, indent="  ")

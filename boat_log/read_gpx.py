@@ -97,7 +97,7 @@ def process_trk_segment(trk_pt, seg_num, number, track, segment, delta, lat0, lo
         }
         if trk_pt.get('time'):
             data['when'] = trk_pt['time']
-        if trk_pt.get('extension'):
+        if trk_pt.get('extensions'):
             if trk_pt['extensions'].get('raymarine:TrackPointExtension'):
                 data['extensions'] = trk_pt['extensions']
                 if trk_pt['extensions']['raymarine:TrackPointExtension'].get('raymarine:WaterDepth'):
@@ -133,7 +133,7 @@ def read_track(in_file, trk_data, track_number):
         number = 1
         segment = 1
         seg_num = 1
-        delta = 1E-04  # about 11.2m
+        delta = 2E-04  # about22.4
         delta_lat = delta  # recalculated for segment lat
         lat0 = 0
         long0 = 0

@@ -76,6 +76,7 @@ class GPXWriteFile(models.Model):
     WAYPOINTS = 'WP'
     ROUTES = 'RT'
     TRACKS = 'TR'
+    PASSAGE = 'PA'
 
     OPEN_CPN = 'OP'
     RAYMARINE = 'RA'
@@ -86,6 +87,7 @@ class GPXWriteFile(models.Model):
         (WAYPOINTS, 'Waypoints OpenCPN/Element 9s'),
         (ROUTES, 'Plans and Plan Points OpenCPN/Element 9s'),
         (TRACKS, 'Tracks OpenCPN/Element 9s'),
+        (PASSAGE, 'Passage OpenCPN/Element 9s'),
     ]
 
     ext_type = [

@@ -3,6 +3,7 @@ from boat_log.models import WeatherLog, EngineLog, SeaLog, ExchangeLocation, GPX
 from .read_gpx import read_in
 from .write_gpx import write_out
 from datetime import datetime
+from django.db.models import Q
 
 
 @admin.register(WeatherLog)
@@ -48,17 +49,24 @@ class GPXReadFileAdmin(admin.ModelAdmin):
 class GPXWriteFileAdmin(admin.ModelAdmin):
     list_display = ['gpx_file_name', 'directory', 'from_date', 'write_time']
     ordering = ['gpx_file_name']
-    actions = ['write_gpx']
+    actions = ['write_gpx_date', 'write_gpx_active']
 
-    def write_gpx(self, request, queryset):
+    def write_gpx_date(self, request, queryset):
         for rec in queryset.iterator():
-            try:
-                write_out(rec.directory.directory, rec.gpx_file_name, rec.from_date, rec.content, rec.extensions)
-                rec.write_time = datetime.now()
-                rec.save()
-            except Exception as e:
-                raise e
+            select = Q(updated_at__gte=rec.from_date)
+            self.write_gpx(rec, select)
 
-    write_gpx.short_description = "Write GPX into all tables"
+    def write_gpx_active(self, request, queryset):
+        for rec in queryset.iterator():
+            select = Q(active=True)
+            self.write_gpx(rec, select)
+
+    def write_gpx(self, rec, select):
+        write_out(rec.directory.directory, rec.gpx_file_name, select, rec.content, rec.extensions)
+        rec.write_time = datetime.now()
+        rec.save()
+
+    write_gpx_date.short_description = "Write updated records to GPX file"
+    write_gpx_active.short_description = "Write active records to GPX file"
 
 

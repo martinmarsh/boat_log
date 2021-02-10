@@ -3,12 +3,13 @@ from planning.models import Plan
 
 
 class Passage(models.Model):
+    name = models.CharField(max_length=150, default="")
+    description = models.TextField(default="", blank=True)
     start_time = models.DateTimeField(blank=True, null=True)
     end_time = models.DateTimeField(blank=True, null=True)
     start_from = models.CharField(max_length=200)
     to = models.CharField(max_length=200, blank=True, default="")
     towards = models.CharField(max_length=200, blank=True, default='')
-    description = models.TextField(default="", blank=True)
     weather = models.TextField(blank=True, default='')
     gpx_source_file = models.CharField(max_length=180, blank=True, default="")
     maintenance = models.TextField(blank=True, default='')
@@ -142,6 +143,9 @@ class Position(models.Model):
     when = models.DateTimeField()
     narrative = models.TextField(blank=True, default='')
     passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
+    number = models.DecimalField(max_digits=6, decimal_places=0, blank=True, null=True)
+    segment = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
+    seg_num = models.DecimalField(max_digits=4, decimal_places=0, blank=True, null=True)
     lat = models.FloatField(blank=True, null=True)
     long = models.FloatField(blank=True, null=True)
     log = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
@@ -151,6 +155,11 @@ class Position(models.Model):
     sog = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     cog = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     status = models.CharField(choices=sail_status, max_length=2, default=MOORED, null=True)
+    opencpn_extensions = models.JSONField(null=True, blank=True)
+    extensions = models.JSONField(null=True, blank=True)
+    depth = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    opencpn_extensions = models.JSONField(null=True, blank=True)
+    extensions = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.when} {self.passage.start_from}'
@@ -205,7 +214,7 @@ class TrackPoint(models.Model):
     long = models.FloatField(blank=True, null=True)
     opencpn_extensions = models.JSONField(null=True, blank=True)
     extensions = models.JSONField(null=True, blank=True)
-    depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    depth = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
         return f'{self.track} - {self.number}'
