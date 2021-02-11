@@ -144,8 +144,6 @@ class Position(models.Model):
     narrative = models.TextField(blank=True, default='')
     passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
     number = models.DecimalField(max_digits=6, decimal_places=0, blank=True, null=True)
-    segment = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
-    seg_num = models.DecimalField(max_digits=4, decimal_places=0, blank=True, null=True)
     lat = models.FloatField(blank=True, null=True)
     long = models.FloatField(blank=True, null=True)
     log = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
@@ -158,8 +156,6 @@ class Position(models.Model):
     opencpn_extensions = models.JSONField(null=True, blank=True)
     extensions = models.JSONField(null=True, blank=True)
     depth = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    opencpn_extensions = models.JSONField(null=True, blank=True)
-    extensions = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.when} {self.passage.start_from}'

@@ -13,8 +13,9 @@ def list_segs(track_points, extensions):
     seg_list = []
     point_list = []
     for track_point in track_points:
-        if segment != int(track_point.segment):
-            segment = int(track_point.segment)
+        segmemt = int(getattr(track_point, "segment", 1))
+        if segment != segmemt:
+            segment = segmemt
             if point_list:
                 seg_list.append(OrderedDict([('trkpt', point_list)]))
                 point_list = []
