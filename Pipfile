@@ -10,6 +10,7 @@ django = "*"
 xmltodict = "*"
 update = "*"
 style = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.7"

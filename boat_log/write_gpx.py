@@ -1,10 +1,11 @@
+from collections import OrderedDict
+
 import xmltodict
 
+from boat_log.models import GPXWriteFile
+from boat_log.nav_functions import str_to_lat_long
 from passage.models import TrackPoint, Track, Passage, Position
 from planning.models import WayPoint, Plan, PlanPoint
-from boat_log.models import GPXWriteFile
-
-from collections import OrderedDict
 from .read_gpx import ex_plan_defs, ex_rte_defs
 
 
@@ -20,9 +21,10 @@ def list_segs(track_points, extensions):
                 seg_list.append(OrderedDict([('trkpt', point_list)]))
                 point_list = []
 
+        lat, long = str_to_lat_long(track_point.lat, track_point.long)
         trp_pt = OrderedDict([
-                ('@lat', track_point.lat),
-                ('@lon', track_point.long),
+                ('@lat', lat),
+                ('@lon', long),
                 ])
         if track_point.when:
             trp_pt['time'] = track_point.when.strftime('%Y-%m-%dT%H:%M:%S%Z')
@@ -55,10 +57,12 @@ def track_dict(track, extensions, do_content):
     return track_gpx
 
 
+# noinspection DuplicatedCode
 def plan_point_dict(plan_point, extensions):
+    lat, long = str_to_lat_long(plan_point.lat, plan_point.long)
     plan_point_gpx = OrderedDict([
-        ('@lat', plan_point.lat),
-        ('@lon', plan_point.long),
+        ('@lat', lat),
+        ('@lon', long),
         ('time', plan_point.time),
         ('name', plan_point.name),
         ('sym', plan_point.symbol),
@@ -94,10 +98,12 @@ def plan_dict(plan, extensions):
     return plan_gpx
 
 
+# noinspection DuplicatedCode
 def waypoint_dict(way_pt, extensions):
+    lat, long = str_to_lat_long(way_pt.lat, way_pt.long)
     wpt = OrderedDict([
-        ('@lat', way_pt.lat),
-        ('@lon', way_pt.long),
+        ('@lat', lat),
+        ('@lon', long),
         ('time', way_pt.time),
         ('name', way_pt.name),
         ('sym', way_pt.symbol),

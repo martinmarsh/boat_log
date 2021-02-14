@@ -1,10 +1,13 @@
+import datetime
+import math
+
 import xmltodict
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.utils.dateparse import parse_datetime
+
+from boat_log.nav_functions import lat_long_to_string
 from passage.models import TrackPoint, Track
 from planning.models import WayPoint, Plan, PlanPoint
-from django.utils.dateparse import parse_datetime
-import math
-import datetime
 
 ex_plan_defs = {
     'opencpn_guid': 'opencpn:guid',
@@ -56,7 +59,8 @@ def read_route(in_file, gpx_rte):
     number = 1
     for rte_data in gpx_rte.get('rtept', {}):
         rte_extensions = rte_data.get('extensions')
-        passage_point_exts = {field_name: rte_extensions.get(gpx_name, '') for field_name, gpx_name in ex_rte_defs.items()}
+        passage_point_exts = {field_name: rte_extensions.get(gpx_name, '') 
+                              for field_name, gpx_name in ex_rte_defs.items()}
         for field_name in passage_point_exts:
             try:
                 del (rte_extensions[ex_rte_defs[field_name]])
@@ -67,7 +71,9 @@ def read_route(in_file, gpx_rte):
         field['number'] = number
         field['plan'] = plan
         field.update(passage_point_exts)
+        field['lat'], field['long'] = lat_long_to_string(field.get('lat'), field.get('long'))
         set_fields = {field_name: field_value for field_name, field_value in field.items() if field_value}
+
         ids = {}
         if set_fields['opencpn_guid']:
             ids['opencpn_guid'] = set_fields['opencpn_guid']
@@ -104,6 +110,8 @@ def process_trk_segment(trk_pt, seg_num, number, track, segment, delta, lat0, lo
                     data['depth'] = trk_pt['extensions']['raymarine:TrackPointExtension']['raymarine:WaterDepth']
             else:
                 data['opencpn_extensions'] = trk_pt['extensions']
+                
+        data['lat'], data['long'] = lat_long_to_string(data.get('lat'), data.get('long'))
 
         TrackPoint.objects.create(**data)
         lat0 = lat1
@@ -199,6 +207,8 @@ def read_waypoint(in_file, gpx_wpt):
                 if raymarine:
                     field['raymarine_guid'] = raymarine.get('raymarine:GUID')
                     ids['raymarine_guid'] = field['raymarine_guid']
+
+        field['lat'], field['long'] = lat_long_to_string(field.get('lat'), field.get('long'))
         set_fields = {field_name: field_value for field_name, field_value in field.items() if field_value}
         if not ids:
             ids['time'] = field.get('time', datetime.datetime.now())

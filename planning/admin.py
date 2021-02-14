@@ -1,6 +1,6 @@
 from django.contrib import admin
 from planning.models import Plan, PlanPoint, TideRatePoint, TideStation, TideRate, WayPoint, TideHeightPoint
-from boat_log.plan_actions import copy_plan
+from boat_log.plan_actions import copy_plan, reverse_copy_plan
 
 
 @admin.register(Plan)
@@ -8,7 +8,7 @@ class PlanAdmin(admin.ModelAdmin):
     list_display = ['title', 'active', 'start_from', 'to', 'start_time', 'end_time', 'distance', 'dtw', 'updated_at']
     ordering = ['title']
     list_filter = ['start_from']
-    actions = ['reverse', 'append', 'copy', 'calculate']
+    actions = ['reverse', 'copy', 'append', 'calculate']
 
     def append(self, request, queryset):
         pass
@@ -18,13 +18,14 @@ class PlanAdmin(admin.ModelAdmin):
             copy_plan(rec)
 
     def reverse(self, request, queryset):
-        pass
+        for rec in queryset.iterator():
+            reverse_copy_plan(rec)
 
     def calculate(self, request, queryset):
         pass
 
     append.short_description = "Append to active route"
-    reverse.short_description = "Reverse route"
+    reverse.short_description = "Reverse copy"
     calculate.short_description = "Calculate"
     copy.short_description = "Copy"
 
@@ -32,7 +33,7 @@ class PlanAdmin(admin.ModelAdmin):
 @admin.register(PlanPoint)
 class PlanPointAdmin(admin.ModelAdmin):
     list_display = ['number', 'name', 'description', 'cts', 'distance', 'set', 'drift',
-                    'time', 'symbol', 'plan', 'way_point', 'updated_at']
+                    'time', 'symbol', 'lat', 'long', 'updated_at', 'way_point', 'plan']
     ordering = ['plan', 'number']
     list_filter = ['plan']
 
@@ -59,6 +60,6 @@ class TideRateAdmin(admin.ModelAdmin):
 
 @admin.register(WayPoint)
 class WayPointAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description', 'time', 'type', 'symbol', 'updated_at']
+    list_display = ['name', 'description', 'time', 'type', 'symbol', 'lat', 'long', 'updated_at']
     ordering = ['long']
     list_filter = ['symbol', 'psym', 'type', 'tide_station', 'tide_rates']

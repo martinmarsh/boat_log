@@ -144,8 +144,8 @@ class Position(models.Model):
     narrative = models.TextField(blank=True, default='')
     passage = models.ForeignKey(Passage, on_delete=models.CASCADE, blank=True, null=True)
     number = models.DecimalField(max_digits=6, decimal_places=0, blank=True, null=True)
-    lat = models.FloatField(blank=True, null=True)
-    long = models.FloatField(blank=True, null=True)
+    lat = models.CharField(max_length=16, default="", blank=True)
+    long = models.CharField(max_length=16, default="", blank=True)
     log = models.DecimalField(max_digits=10, decimal_places=3, blank=True, null=True)
     fix_by = models.CharField(choices=fix_type, max_length=2, default=NO_FIX, null=True)
     course = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
@@ -176,8 +176,8 @@ class TideLog(models.Model):
 class DepthLog(models.Model):
     when = models.DateTimeField()
     depth = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    lat = models.FloatField(blank=True, null=True)
-    long = models.FloatField(blank=True, null=True)
+    lat = models.CharField(max_length=16, default="", blank=True)
+    long = models.CharField(max_length=16, default="", blank=True)
     tide = models.ForeignKey(TideLog, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
@@ -206,8 +206,8 @@ class TrackPoint(models.Model):
     number = models.DecimalField(max_digits=6, decimal_places=0, blank=True, null=True)
     segment = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     seg_num = models.DecimalField(max_digits=4, decimal_places=0, blank=True, null=True)
-    lat = models.FloatField(blank=True, null=True)
-    long = models.FloatField(blank=True, null=True)
+    lat = models.CharField(max_length=16, default="", blank=True)
+    long = models.CharField(max_length=16, default="", blank=True)
     opencpn_extensions = models.JSONField(null=True, blank=True)
     extensions = models.JSONField(null=True, blank=True)
     depth = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
