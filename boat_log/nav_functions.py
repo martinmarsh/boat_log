@@ -28,6 +28,7 @@ def _to_real(x, err):
     if not x:
         raise err
     v = float(x[0][0]) + float(x[0][1])/60.0
+    v = round(v, 6)
     if x[0][2] in ['S', 's', 'W', 'w']:
         v = -v
     return v
