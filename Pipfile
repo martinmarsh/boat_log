@@ -4,13 +4,17 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pytest = "*"
+pytest-bdd = "*"
+coverage = "*"
+selenium = "*"
+splinter = "*"
+pytest-splinter = "*"
 
 [packages]
+# update = "*"
+# style = "*"
 django = "*"
 xmltodict = "*"
-update = "*"
-style = "*"
-coverage = "*"
 
 [requires]
-python_version = "3.7"

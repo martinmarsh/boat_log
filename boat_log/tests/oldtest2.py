@@ -1,4 +1,5 @@
 from django.test import TestCase
+
 from boat_log.nav_functions import str_to_lat_long, lat_long_to_string, course
 
 

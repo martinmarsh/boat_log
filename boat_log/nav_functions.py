@@ -1,7 +1,6 @@
 import re
 import math
 
-
 RE_LAT = re.compile("^(\d{1,2})[ °][ ]*(\d{1,2}[.]?[0-9]*)[\x27 ]*([NSns])$")
 RE_LONG = re.compile("^(\d{1,3})[ °][ ]*(\d{1,2}[.]?[0-9]*)[\x27 ]*([WEwe])$")
 
