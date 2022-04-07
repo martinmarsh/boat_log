@@ -71,7 +71,7 @@ class PlanAdmin(admin.ModelAdmin):
 
 @admin.register(PlanPoint)
 class PlanPointAdmin(admin.ModelAdmin):
-    list_display = ['number', 'fixed', 'name', 'major', 'description', 'cts', 'cog',  'distance', 'set', 'drift',
+    list_display = ['number', 'fixed', 'name', 'major', 'description', 'cts', 'cog',  'distance', 'dtw', 'set', 'drift',
                     'time_display', 'symbol', 'lat', 'long', last_updated, 'way_point', 'plan']
     ordering = ['plan', 'number']
     list_filter = ['plan', 'fixed', 'major']
@@ -133,7 +133,7 @@ class WayPointAdmin(admin.ModelAdmin):
 class PlanPointInline(admin.TabularInline):
     model = PlanPoint
     readonly_fields = ['number', 'fixed', 'name', 'major', 'description', 'cts',
-                       'cog', 'distance', 'smg', 'set', 'drift',
+                       'cog', 'distance', 'dtw', 'smg', 'set', 'drift',
                         'time_display',  'lat', 'long', last_updated]
 
     exclude = ['time', 'symbol', 'psym', 'extensions', 'opencpn_extensions', 'opencpn_guid', 'links', 'type',

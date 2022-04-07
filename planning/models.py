@@ -135,7 +135,9 @@ class PlanPoint(models.Model):
     cts = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     cog = models.DecimalField(max_digits=3, decimal_places=0, blank=True, null=True)
     smg = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    dtw = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
     distance = models.DecimalField(max_digits=7, decimal_places=1, blank=True, null=True)
+    plan_speed = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

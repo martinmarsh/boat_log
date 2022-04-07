@@ -1,6 +1,6 @@
 from planning.models import Plan, PlanPoint, TideRate, TideRatePoint
 from boat_log.common import dict_from_attr_list
-from boat_log.nav_functions import course, str_to_lat_long
+from boat_log.nav_functions import course, str_to_lat_long, course_over_water
 from datetime import timedelta
 
 
@@ -64,8 +64,11 @@ def plan_route(rec):
     number = 0
     sub_number = 0
     total_distance = 0
+    total_water_distance = 0
     last_lat = None
     last_long = None
+    drift_start = None
+    set_start = None
 
     changed = []
     for pt in plan_points:
@@ -86,8 +89,8 @@ def plan_route(rec):
         # now calculate eta
         if number == 1:
             pt.time = current_time
-            pt.drift = None
-            pt.set = None
+            drift_start = pt.drift
+            set_start = pt.set
             pt.cts = None
             pt.smg = None
             pt.distance = 0
@@ -101,16 +104,22 @@ def plan_route(rec):
             )
             last_lat = pt.lat
             last_long = pt.long
-            pt.drift = None
-            pt.set = None
-            pt.cts = bearing
-            pt.smg = plan_speed
+            if pt.plan_speed is not None:
+                course_plan_speed = pt.plan_speed 
+            else:
+                course_plan_speed = plan_speed 
+        
+            pt.cts, pt.dtw, pt.smg, delta_time = course_over_water(bearing, distance, course_plan_speed, set_start, drift_start)
+ 
             pt.distance = distance
             total_distance += distance
-            delta_time = distance/plan_speed
-            nav_change = ['time', 'drift', 'set', 'cts', 'smg', 'distance']
+            total_water_distance += pt.dtw
+    
+            nav_change = ['time', 'drift', 'set', 'cts', 'smg', 'distance', "dtw"]
             pt.time = current_time + timedelta(hours=delta_time)
             current_time = pt.time
+            drift_start = pt.drift
+            set_start = pt.set
 
         changed.extend(nav_change)
         if changed:
@@ -119,5 +128,5 @@ def plan_route(rec):
 
     rec.end_time = current_time
     rec.distance = total_distance
-    rec.dtw = total_distance
+    rec.dtw = total_water_distance
     rec.save(update_fields=['end_time', 'distance', 'dtw'])
