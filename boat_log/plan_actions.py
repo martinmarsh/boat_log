@@ -114,8 +114,9 @@ def plan_route(rec):
             pt.distance = distance
             total_distance += distance
             total_water_distance += pt.dtw
+            pt.cog = bearing
     
-            nav_change = ['time', 'drift', 'set', 'cts', 'smg', 'distance', "dtw"]
+            nav_change = ['time', 'drift', 'set', 'cts', 'cog', 'smg', 'distance', "dtw"]
             pt.time = current_time + timedelta(hours=delta_time)
             current_time = pt.time
             drift_start = pt.drift
