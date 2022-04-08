@@ -46,7 +46,7 @@ class PlanAdmin(admin.ModelAdmin):
                     'distance', 'dtw', last_updated]
     ordering = ['title']
     list_filter = ['start_from', 'to']
-    actions = ['reverse', 'copy', 'append', 'calculate']
+    actions = ['reverse', 'copy', 'calculate']
 
     def append(self, request, queryset):
         pass
@@ -125,9 +125,23 @@ class TideHeightPointAdmin(admin.ModelAdmin):
 
 @admin.register(WayPoint)
 class WayPointAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description', 'time', 'type', 'symbol', 'lat', 'long', 'updated_at']
+    list_display = ['name', 'active', 'description','time', 'type', 'symbol', 'lat', 'long', 'updated_at']
     ordering = ['long']
     list_filter = ['symbol', 'psym', 'type', 'tide_station', 'tide_rates']
+    actions = ['activate', 'deactivate']
+
+    def activate(self, request, queryset):
+        for rec in queryset.iterator():
+            rec.active = True
+            rec.save()
+
+    def deactivate(self, request, queryset):
+        for rec in queryset.iterator():
+            rec.active = False
+            rec.save()
+    
+    activate.short_description = "make active"
+    deactivate.short_description = "deactivate"
 
 
 class PlanPointInline(admin.TabularInline):
@@ -168,7 +182,7 @@ class PlanShowAdmin(admin.ModelAdmin):
 
     ordering = ['title']
     list_filter = ['start_from', 'to']
-    actions = ['reverse', 'copy', 'append', 'calculate']
+    actions = ['reverse', 'copy', 'calculate']
 
     def append(self, request, queryset):
         pass
