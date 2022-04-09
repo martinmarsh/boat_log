@@ -84,8 +84,8 @@ def to_polar(x: float, y: float)-> tuple:
     course = math.degrees(math.atan2(x,y))
     if course < 0:
         course +=360
-        distance = math.sqrt(x * x + y * y)
-        return course, distance
+    distance = math.sqrt(x * x + y * y)
+    return course, distance
 
 
 def course_over_water(cog: decimal.Decimal, dog: decimal.Decimal, speed: decimal.Decimal, set: decimal.Decimal, drift: decimal.Decimal): 
